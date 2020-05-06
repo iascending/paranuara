@@ -91,7 +91,7 @@ class CommonFriendsView(generics.ListAPIView):
             response = {"message": "Incorrect query parameters provided."}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        options = {'eye_color': 'blue', 'has_died': False}
+        options = {'eye_color': 'brown', 'has_died': False}
         objs_dict = {
             'people1': people1,
             'people2': people2,

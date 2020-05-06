@@ -39,7 +39,7 @@ def sample_employee(index, company):
         "balance": fakegen.random_number(5),
         "picture": "http://placehold.it/32x32",
         "age": fakegen.random_int(),
-        "eye_color": "blue",
+        "eye_color": "brown",
         "name": "{} {}".format(fakegen.first_name(), fakegen.last_name()),
         "gender": "female",
         "email": fakegen.email(),
