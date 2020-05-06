@@ -65,7 +65,7 @@ class ModelTests(TestCase):
             name='kiwi'
         )
         self.assertEqual(str(food), food.name)
-        self.assertEqual(food.type, 'fruit')
+        self.assertEqual(food.category, 'fruit')
 
     def test_tag_str(self):
         """Test tag string representation"""

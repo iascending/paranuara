@@ -3,6 +3,14 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 
+COMMON_FRUIT_LIST = [
+    'apple', 'watermelon', 'orange', 'pear', 'cherry', 'strawberry', 'nectarine',
+    'grape', 'mango', 'blueberry', 'pomegranate', 'carambola', 'starfruit', 'plum',
+    'banana', 'raspberry', 'mandarin', 'jackfruit', 'papaya', 'kiwi', 'pineapple',
+    'lime', 'lemon', 'apricot', 'grapefruit', 'melon', 'coconut', 'avocado', 'peach'
+]
+
+
 class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
@@ -46,45 +54,28 @@ class Company(models.Model):
         """Return string representation of object"""
         return '{}-{}'.format(self.index, self.name)
 
-    def save(self, *args, **kwargs):
-        """Save company name as lowercase strings"""
-        if self.name:
-            self.name = self.name.lower()
-
-        return super(Company, self).save(*args, **kwargs)
-
-
-FRUIT_LIST = [
-    'Apple', 'Watermelon', 'Orange', 'Pear', 'Cherry', 'Strawberry', 'Nectarine', 'Grape',
-    'Mango', 'Blueberry', 'Pomegranate', 'Carambola', 'starfruit', 'Plum', 'Banana', 'Raspberry',
-    'Mandarin', 'Jackfruit', 'Papaya', 'Kiwi', 'Pineapple', 'Lime', 'Lemon', 'Apricot', 'Grapefruit',
-    'Melon', 'Coconut', 'Avocado', 'Peach'
-]
+    @property
+    def employees(self):
+        all_employees = People.objects.filter(company__index=self.index)
+        if not all_employees:
+            return "No employees in this company."
+        return [{"index": el.index, "name": el.name} for el in all_employees]
 
 
 class Food(models.Model):
     """Model class for favorite foods"""
     name = models.CharField(max_length=255, unique=True)
-    type = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        choices=(('fruit', 'Fruit'), ('vegetable', 'Vegetable'))
-    )
+
+    @property
+    def category(self):
+        if self.name.lower() in COMMON_FRUIT_LIST:
+            return 'fruit'
+        else:
+            return 'vegetable'
 
     def __str__(self):
         """Return string representation of object"""
         return self.name
-
-    def save(self, *args, **kwargs):
-        if self.name:
-            self.name = self.name.title()
-            if self.name in FRUIT_LIST:
-                self.type = 'fruit'
-            else:
-                self.type = 'vegetable'
-
-        return super(Food, self).save(*args, **kwargs)
 
 
 class Tag(models.Model):
@@ -103,12 +94,16 @@ class People(models.Model):
     index = models.IntegerField(unique=True)
     guid = models.CharField(max_length=255)
     has_died = models.BooleanField(default=False)
-    balance = models.IntegerField(default=0)
+    balance = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     picture = models.URLField(max_length=200, null=True, blank=True)
     age = models.PositiveIntegerField(null=True, blank=True)
     eye_color = models.CharField(max_length=50, null=True, blank=True)
     name = models.CharField(max_length=50)
-    gender = models.CharField(max_length=50, choices=(('male', 'Male'), ('female', 'Female')), default='female')
+    gender = models.CharField(
+        max_length=50,
+        choices=(('male', 'Male'), ('female', 'Female')),
+        default='female'
+    )
     company = models.ForeignKey("Company", on_delete=models.CASCADE)
     email = models.EmailField(max_length=254, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
@@ -124,4 +119,41 @@ class People(models.Model):
     foods = models.ManyToManyField("Food", verbose_name=_("Foods"), blank=True)
 
     def __str__(self):
+        """String representation of People object"""
         return '{}-{}'.format(self.index, self.name)
+
+    @property
+    def fruits(self):
+        return self.foods.filter(
+            name__in=COMMON_FRUIT_LIST
+        ).values_list('name', flat=True)
+
+    @property
+    def vegetables(self):
+        return self.foods.exclude(
+            name__in=COMMON_FRUIT_LIST
+        ).values_list('name', flat=True)
+
+    @property
+    def address(self):
+        return ', '.join([
+            self.street_name,
+            self.suburb,
+            self.state,
+            str(self.postcode)
+        ])
+
+    def get_common_friends(self, other, **options):
+        """Get the friends in common for 2 people"""
+
+        seta = set(self.friends.values_list('index', flat=True))
+        setb = set(other.friends.values_list('index', flat=True))
+
+        common_friends = People.objects.filter(
+            index__in=list(seta & setb)
+        ).filter(
+            eye_color=options['eye_color'],
+            has_died=options['has_died']
+        )
+
+        return common_friends
