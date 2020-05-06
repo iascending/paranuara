@@ -28,7 +28,7 @@ Go to the directory you would like the project to be. Then take the following st
 
 Run the following commands in the root directory of the project:
 
-1. docker-compose run app sh -c "python manage.py makemigrations core"
+1. docker-compose run app sh -c "python manage.py migrate"
 
 2. docker-compose run --rm app sh -c "python manage.py test && flake8"
 
